@@ -153,47 +153,29 @@ if uploaded_file is not None:
             probabilities = prediction['probabilities']
             max_prob = max(probabilities.values())
             min_prob = min(probabilities.values())
-            is_stuck = max_prob > 0.95 and min_prob < 0.05
             
-            # Create probability bars
-            prob_bars = ""
-            for class_name, prob in probabilities.items():
-                width = prob * 100
-                color = "#4a90e2" if class_name == prediction['class'] else "#50c878"
-                prob_bars += f"""
-                    <div style="margin: 10px 0;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <span><strong>{class_name}:</strong></span>
-                            <span>{width:.2f}%</span>
-                        </div>
-                        <div style="background: #f0f0f0; height: 20px; border-radius: 10px; overflow: hidden;">
-                            <div style="background: {color}; width: {width}%; height: 100%; transition: width 0.5s ease;"></div>
-                        </div>
-                    </div>
-                """
-            
-            warning_message = ""
-            if is_stuck:
-                warning_message = """
-                    <div style="background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; margin-top: 15px;">
-                        ⚠️ Warning: The model seems to be very confident in this prediction. This might indicate a potential issue with the model's training or input processing.
-                    </div>
-                """
-            
+            # Create probability bars - directly using Streamlit components instead of HTML
             st.markdown(
                 f"""
                 <div class="result-box">
                     <h3>Detection Result</h3>
                     <p><strong>Predicted Disease:</strong> {prediction['class']}</p>
                     <p><strong>Confidence:</strong> {(prediction['confidence'] * 100):.2f}%</p>
-                    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #4a90e2;">
-                        <h4 style="color: #4a90e2; margin-bottom: 10px;">Class Probabilities:</h4>
-                        {prob_bars}
-                    </div>
-                    {warning_message}
                 </div>
                 """, unsafe_allow_html=True
             )
+
+            # Display class probabilities using Streamlit's native progress bars
+            st.markdown("<h4 style='color: #4a90e2; margin: 20px 0 10px 0;'>Class Probabilities:</h4>", unsafe_allow_html=True)
+            
+            # Sort probabilities from highest to lowest
+            sorted_probs = sorted(probabilities.items(), key=lambda x: x[1], reverse=True)
+            
+            # Display each class probability with a Streamlit progress bar
+            for class_name, prob in sorted_probs:
+                prob_percentage = prob * 100
+                st.write(f"**{class_name}:** {prob_percentage:.2f}%")
+                st.progress(float(prob))
         else:
             st.error("❌ Error: Unable to process the image. Please try again.")
     
